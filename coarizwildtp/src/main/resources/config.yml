@@ -1,0 +1,73 @@
+#Plugin by Coariz
+world: world
+
+#Economy integration
+cost: 0
+
+#Parameters
+max_x: 5000
+max_z: 5000
+min_x: -5000
+min_z: -5000
+spawn_radius: 500 # Change on how far the players should be teleported from spawn
+center_x: 0 # X coordinate of the center point
+center_z: 0 # Z coordinate of the center point
+radius: 1000 # Radius around the center point for teleportation
+max_attempts: 500 # Increased number of attempts
+logging_enabled: false # Enable or disable logging
+teleport_delay: 5 # Teleport delay in seconds
+cooldown: 5 # Cooldown in seconds
+allow_movement_during_delay: false # Allow or disallow movement during the delay
+
+#Whitelisted and blacklisted blocks
+blacklisted_blocks:
+  - WATER
+  - LAVA
+  - FIRE
+  - CACTUS
+  - SWEET_BERRY_BUSH
+  - BAMBOO
+  - BAMBOO_SAPLING
+allowed_surface_materials:
+  - GRASS_BLOCK
+  - DIRT
+  - COARSE_DIRT
+  - PATH
+  - OAK_LEAVES
+  - SPRUCE_LEAVES
+  - BIRCH_LEAVES
+  - JUNGLE_LEAVES
+  - ACACIA_LEAVES
+  - DARK_OAK_LEAVES
+  - MANGROVE_LEAVES
+  - AZALEA_LEAVES
+  - FLOWERING_AZALEA_LEAVES
+  - STONE
+  - COBBLESTONE
+  - OAK_LOG
+  - SPRUCE_LOG
+  - BIRCH_LOG
+  - JUNGLE_LOG
+  - ACACIA_LOG
+  - DARK_OAK_LOG
+  - MANGROVE_LOG
+  - CRIMSON_STEM
+  - WARPED_STEM
+  - STRIPPED_OAK_LOG
+  - STRIPPED_SPRUCE_LOG
+  - STRIPPED_BIRCH_LOG
+  - STRIPPED_JUNGLE_LOG
+  - STRIPPED_ACACIA_LOG
+  - STRIPPED_DARK_OAK_LOG
+  - STRIPPED_MANGROVE_LOG
+  - STRIPPED_CRIMSON_STEM
+  - STRIPPED_WARPED_STEM
+  - STRIPPED_OAK_WOOD
+  - STRIPPED_SPRUCE_WOOD
+  - STRIPPED_BIRCH_WOOD
+  - STRIPPED_JUNGLE_WOOD
+  - STRIPPED_ACACIA_WOOD
+  - STRIPPED_DARK_OAK_WOOD
+  - STRIPPED_MANGROVE_WOOD
+  - STRIPPED_CRIMSON_HYPHAE
+  - STRIPPED_WARPED_HYPHAE

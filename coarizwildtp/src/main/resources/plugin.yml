@@ -1,0 +1,13 @@
+name: CoarizWildTP
+version: 1.0-SNAPSHOT
+main: com.coariz.coarizwildtp.CoarizWildTP
+api-version: 1.19
+commands:
+  wild:
+    description: Teleports you to a random safe location.
+    aliases:
+      - rtp
+permissions:
+  coarizwildtp.use:
+    description: Allows the player to use the /wild command.
+    default: op
