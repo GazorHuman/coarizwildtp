@@ -26,7 +26,6 @@ public class WildTeleportCommand implements CommandExecutor, Listener {
     private final CoarizWildTP plugin;
     private final ConcurrentHashMap<UUID, Location> initialLocationMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, BukkitRunnable> teleportTasks = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, Long> cooldownMap = new ConcurrentHashMap<>();
 
     public WildTeleportCommand(CoarizWildTP plugin) {
         this.plugin = plugin;
@@ -36,56 +35,60 @@ public class WildTeleportCommand implements CommandExecutor, Listener {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("Only players can use this command.");
+            sender.sendMessage(plugin.colorize(plugin.getLangConfig().getString("only_players", "Only players can use this command.")));
             return true;
         }
 
         Player player = (Player) sender;
         FileConfiguration config = plugin.getConfig();
+        FileConfiguration langConfig = plugin.getLangConfig();
 
         // Check cooldown
         long currentTime = System.currentTimeMillis();
         UUID playerId = player.getUniqueId();
         if (teleportTasks.containsKey(playerId)) {
-            player.sendMessage("You already have a teleportation in progress.");
+            player.sendMessage(plugin.colorize(langConfig.getString("already_in_progress", "You already have a teleportation in progress.")));
             return true;
         }
 
-        if (cooldownMap.containsKey(playerId)) {
-            long lastUsed = cooldownMap.get(playerId);
+        if (plugin.cooldownMap.containsKey(playerId)) {
+            long lastUsed = plugin.cooldownMap.get(playerId);
             long cooldownTime = config.getLong("cooldown", 5) * 1000L; // Convert seconds to milliseconds
             if (currentTime - lastUsed < cooldownTime) {
                 long remainingTime = (lastUsed + cooldownTime - currentTime) / 1000L;
-                player.sendMessage("You must wait " + remainingTime + " more seconds before using this command again.");
+                player.sendMessage(plugin.colorize(langConfig.getString("cooldown_message", "You must wait %seconds% more seconds before using this command again.").replace("%seconds%", String.valueOf(remainingTime))));
                 return true;
             }
         }
 
-        double cost = config.getDouble("cost", 0);
-        if (cost > 0) {
-            if (plugin.getEconomy().getBalance(player) < cost) {
-                player.sendMessage("You don't have enough money to use this command.");
-                return true;
+        // Check if economy is enabled
+        if (plugin.isEconomyEnabled()) {
+            double cost = config.getDouble("cost", 0);
+            if (cost > 0) {
+                if (plugin.getEconomy().getBalance(player) < cost) {
+                    player.sendMessage(plugin.colorize(plugin.getLangConfig().getString("not_enough_money", "You don't have enough money to use this command.")));
+                    return true;
+                }
+                plugin.getEconomy().withdrawPlayer(player, cost);
             }
-            plugin.getEconomy().withdrawPlayer(player, cost);
         }
 
         World world = Bukkit.getWorld(config.getString("world", player.getWorld().getName()));
         if (world == null) {
-            player.sendMessage("Invalid world specified in config.");
+            player.sendMessage(plugin.colorize(plugin.getLangConfig().getString("invalid_world", "Invalid world specified in config.")));
             return true;
         }
 
         Location safeLocation = findSafeLocation(world);
         if (safeLocation == null) {
-            player.sendMessage("Could not find a safe location.");
+            player.sendMessage(plugin.colorize(plugin.getLangConfig().getString("no_safe_location", "Could not find a safe location.")));
             return true;
         }
 
         int teleportDelay = config.getInt("teleport_delay", 5); // Default delay is 5 seconds
         boolean allowMovementDuringDelay = config.getBoolean("allow_movement_during_delay", false);
 
-        player.sendMessage("Teleporting in " + teleportDelay + " seconds...");
+        player.sendMessage(plugin.colorize(langConfig.getString("teleport_delay_message", "Teleporting in %seconds% seconds...").replace("%seconds%", String.valueOf(teleportDelay))));
 
         // Store the player's initial location
         initialLocationMap.put(playerId, player.getLocation());
@@ -98,9 +101,9 @@ public class WildTeleportCommand implements CommandExecutor, Listener {
                     Location initialLocation = initialLocationMap.get(playerId);
                     if (initialLocation != null && player.getWorld().equals(initialLocation.getWorld())) {
                         if (player.getLocation().distanceSquared(initialLocation) > 0.1) {
-                            player.sendMessage("You moved during the teleportation delay. Teleportation cancelled.");
+                            player.sendMessage(plugin.colorize(langConfig.getString("moved_during_delay", "You moved during the teleportation delay. Teleportation cancelled.")));
                             initialLocationMap.remove(playerId);
-                            cooldownMap.remove(playerId);
+                            plugin.cooldownMap.remove(playerId);
                             teleportTasks.remove(playerId);
                             return;
                         }
@@ -108,9 +111,9 @@ public class WildTeleportCommand implements CommandExecutor, Listener {
                 }
 
                 player.teleport(safeLocation);
-                player.sendMessage("Teleported to a random location!");
+                player.sendMessage(plugin.colorize(langConfig.getString("teleport_success", "Teleported to a random location!")));
                 initialLocationMap.remove(playerId);
-                cooldownMap.put(playerId, currentTime);
+                plugin.cooldownMap.put(playerId, currentTime);
                 teleportTasks.remove(playerId);
             }
         };
@@ -215,15 +218,16 @@ public class WildTeleportCommand implements CommandExecutor, Listener {
         Player player = event.getPlayer();
         UUID playerId = player.getUniqueId();
         FileConfiguration config = plugin.getConfig();
+        FileConfiguration langConfig = plugin.getLangConfig();
         boolean allowMovementDuringDelay = config.getBoolean("allow_movement_during_delay", false);
 
         if (!allowMovementDuringDelay && initialLocationMap.containsKey(playerId)) {
             Location initialLocation = initialLocationMap.get(playerId);
             if (initialLocation != null && player.getWorld().equals(initialLocation.getWorld())) {
                 if (player.getLocation().distanceSquared(initialLocation) > 0.1) {
-                    player.sendMessage("You moved during the teleportation delay. Teleportation cancelled.");
+                    player.sendMessage(plugin.colorize(langConfig.getString("moved_during_delay", "You moved during the teleportation delay. Teleportation cancelled.")));
                     initialLocationMap.remove(playerId);
-                    cooldownMap.remove(playerId);
+                    plugin.cooldownMap.remove(playerId);
 
                     // Cancel the teleport task
                     BukkitRunnable teleportTask = teleportTasks.remove(playerId);
@@ -242,7 +246,7 @@ public class WildTeleportCommand implements CommandExecutor, Listener {
 
         // Remove the player's initial location and cooldown
         initialLocationMap.remove(playerId);
-        cooldownMap.remove(playerId);
+        plugin.cooldownMap.remove(playerId);
 
         // Cancel the teleport task
         BukkitRunnable teleportTask = teleportTasks.remove(playerId);
